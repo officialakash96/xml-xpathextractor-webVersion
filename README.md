@@ -10,36 +10,6 @@ This is a pure client-side JavaScript version of the XML XPath Extractor that ca
 - ✅ All features from the original Flask version
 - ✅ Can be hosted on GitHub Pages
 
-## Deployment to GitHub Pages
-
-1. **Create a new GitHub repository** (or use existing one):
-   ```bash
-   # Initialize git if not already done
-   git init
-   git add .
-   git commit -m "Initial commit - XML XPath Extractor"
-   ```
-
-2. **Push to GitHub**:
-   ```bash
-   # Replace with your GitHub username
-   git remote add origin https://github.com/yourusername/xpathextractor.git
-   git branch -M main
-   git push -u origin main
-   ```
-
-3. **Enable GitHub Pages**:
-   - Go to your repository on GitHub
-   - Click on **Settings**
-   - Scroll down to **Pages** section
-   - Under "Source", select **main** branch
-   - Select **/ (root)** folder
-   - Click **Save**
-
-4. **Access your site**:
-   - Your site will be available at: `https://yourusername.github.io/xpathextractor/`
-   - It may take a few minutes for the site to be published
-
 ## CORS Considerations
 
 Since this version runs entirely in the browser, it uses a CORS proxy service (allorigins.win) to fetch XML feeds that don't allow direct cross-origin requests. This works for most public XML feeds.
