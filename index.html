@@ -1,0 +1,924 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>XML XPath Extractor</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            background-color: #f5f5f5;
+            padding: 20px;
+        }
+
+        .main-wrapper {
+            max-width: 800px;
+            margin: 0 auto;
+            background-color: white;
+            border-radius: 8px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            overflow: hidden;
+        }
+
+        .header {
+            background-color: #0073b1;
+            padding: 12px 20px;
+            border-bottom: 1px solid #005582;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            flex-wrap: wrap;
+            gap: 15px;
+        }
+
+        .logo-container {
+            background-color: white;
+            padding: 5px 8px;
+            border-radius: 4px;
+        }
+
+        .logo {
+            height: 28px;
+            width: auto;
+        }
+
+        .header-link {
+            color: white;
+            text-decoration: none;
+            font-weight: 500;
+            padding: 8px 16px;
+            border: 1px solid white;
+            border-radius: 4px;
+            transition: all 0.3s ease;
+            font-size: 14px;
+        }
+
+        .header-link:hover {
+            background-color: white;
+            color: #0073b1;
+        }
+
+        .container {
+            background-color: white;
+            padding: 40px;
+        }
+
+        .form-group {
+            position: relative;
+            margin-top: 20px;
+        }
+
+        .form-input {
+            width: 100%;
+            padding: 20px 15px 10px;
+            font-size: 16px;
+            border: 2px solid #ddd;
+            border-radius: 4px;
+            outline: none;
+            transition: border-color 0.3s ease;
+        }
+
+        .form-input:focus {
+            border-color: #0073b1;
+        }
+
+        .form-input:focus + .floating-label,
+        .form-input:not(:placeholder-shown) + .floating-label {
+            top: 5px;
+            font-size: 12px;
+            color: #0073b1;
+        }
+
+        .floating-label {
+            position: absolute;
+            left: 15px;
+            top: 18px;
+            color: #999;
+            font-size: 16px;
+            pointer-events: none;
+            transition: all 0.3s ease;
+        }
+
+        .extract-btn {
+            margin-top: 20px;
+            padding: 12px 30px;
+            background-color: #0073b1;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            font-size: 16px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .extract-btn:hover {
+            background-color: #005582;
+            transform: translateY(-1px);
+            box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+        }
+
+        .extract-btn:disabled {
+            background-color: #ccc;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .loading {
+            display: none;
+            margin-top: 20px;
+            text-align: center;
+            color: #0073b1;
+        }
+
+        .loading.show {
+            display: block;
+        }
+
+        .error {
+            display: none;
+            margin-top: 20px;
+            padding: 15px;
+            background-color: #ffebee;
+            border-left: 4px solid #f44336;
+            color: #c62828;
+            border-radius: 4px;
+        }
+
+        .error.show {
+            display: block;
+        }
+
+        .results {
+            max-height: 0;
+            overflow: hidden;
+            transition: max-height 0.3s ease;
+        }
+
+        .results.show {
+            max-height: none;
+            margin-top: 30px;
+        }
+
+        .results-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            padding-bottom: 10px;
+            border-bottom: 2px solid #0073b1;
+        }
+
+        .results-title {
+            color: #0073b1;
+            font-size: 20px;
+            font-weight: 600;
+        }
+
+        .action-buttons {
+            display: flex;
+            gap: 10px;
+        }
+
+        .action-btn {
+            padding: 8px 16px;
+            background-color: white;
+            color: #0073b1;
+            border: 1px solid #0073b1;
+            border-radius: 4px;
+            font-size: 14px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .action-btn:hover {
+            background-color: #0073b1;
+            color: white;
+        }
+
+        .xpath-list {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        .xpath-item {
+            background: linear-gradient(135deg, #ffffff 0%, #f8f9fa 100%);
+            border-radius: 6px;
+            border: 1px solid #e0e0e0;
+            overflow: hidden;
+            transition: all 0.3s ease;
+        }
+
+        .xpath-item:hover {
+            box-shadow: 0 2px 8px rgba(0,115,177,0.15);
+            border-color: #0073b1;
+        }
+
+        .xpath-item.parent-element {
+            border-left: 4px solid #0073b1;
+        }
+
+        .xpath-item.child-element {
+            border-left: 4px solid #66bb6a;
+        }
+
+        .xpath-header {
+            padding: 12px 15px;
+            cursor: pointer;
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            gap: 10px;
+            background-color: white;
+        }
+
+        .xpath-header > div:first-child {
+            flex: 1;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+
+        .xpath-path {
+            font-family: 'Courier New', monospace;
+            color: #1a1a1a;
+            font-weight: 600;
+            font-size: 13px;
+            word-break: break-all;
+        }
+
+        .element-badge {
+            padding: 4px 8px;
+            border-radius: 12px;
+            font-size: 11px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .element-badge.parent {
+            background-color: #e3f2fd;
+            color: #0073b1;
+        }
+
+        .element-badge.leaf {
+            background-color: #e8f5e9;
+            color: #2e7d32;
+        }
+
+        .copy-xpath-btn {
+            padding: 6px 12px;
+            background-color: #0073b1;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            font-size: 12px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            white-space: nowrap;
+        }
+
+        .copy-xpath-btn:hover {
+            background-color: #005582;
+        }
+
+        .copy-xpath-btn.copied {
+            background-color: #4caf50;
+        }
+
+        .toggle-children-btn {
+            margin-top: 8px;
+            padding: 6px 12px;
+            background-color: #f5f5f5;
+            color: #0073b1;
+            border: 1px solid #0073b1;
+            border-radius: 4px;
+            font-size: 12px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-weight: 500;
+            position: relative;
+            padding-right: 28px;
+        }
+
+        .toggle-children-btn:hover {
+            background-color: #0073b1;
+            color: white;
+        }
+
+        .toggle-children-btn::after {
+            content: '▶';
+            font-size: 10px;
+            position: absolute;
+            right: 10px;
+            top: 50%;
+            transform: translateY(-50%);
+        }
+
+        .toggle-children-btn.collapsed::after {
+            content: '▼';
+        }
+
+        .xpath-content {
+            max-height: 1000px;
+            overflow: hidden;
+            transition: max-height 0.3s ease, opacity 0.3s ease, margin-bottom 0.3s ease;
+            padding: 0 15px 12px;
+            opacity: 1;
+            margin-bottom: 0;
+        }
+
+        .xpath-item.collapsed .xpath-content {
+            max-height: 0;
+            opacity: 0;
+            margin-bottom: 0;
+        }
+
+        .xpath-value {
+            color: #1a1a1a;
+            background-color: #ffffff;
+            padding: 10px;
+            border-radius: 4px;
+            font-family: 'Courier New', monospace;
+            font-size: 13px;
+            border: 1px solid #e0e0e0;
+            word-break: break-word;
+            margin-bottom: 10px;
+        }
+
+        .xpath-value.empty {
+            color: #999;
+            font-style: italic;
+        }
+
+        .attributes {
+            margin-top: 10px;
+        }
+
+        .attributes-header {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 8px;
+        }
+
+        .attributes-header strong {
+            color: #2e7d32;
+            font-size: 13px;
+        }
+
+        .attributes-toggle-btn {
+            padding: 4px 10px;
+            background-color: #f5f5f5;
+            color: #2e7d32;
+            border: 1px solid #4caf50;
+            border-radius: 4px;
+            font-size: 11px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-weight: 500;
+        }
+
+        .attributes-toggle-btn:hover {
+            background-color: #4caf50;
+            color: white;
+        }
+
+        .attributes-content {
+            max-height: 500px;
+            overflow: hidden;
+            transition: max-height 0.3s ease, opacity 0.3s ease;
+            opacity: 1;
+        }
+
+        .attributes-content.hidden {
+            max-height: 0;
+            opacity: 0;
+        }
+
+        .attribute-xpath-item {
+            padding: 10px;
+            margin-bottom: 8px;
+            background: linear-gradient(135deg, #fff 0%, #f5f5f5 100%);
+            border-radius: 4px;
+            border-left: 3px solid #4caf50;
+        }
+
+        .attribute-xpath-item:last-child {
+            margin-bottom: 0;
+        }
+
+        .attribute-xpath-path {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 10px;
+            margin-bottom: 6px;
+        }
+
+        .attribute-xpath-path .xpath-path {
+            font-family: 'Courier New', monospace;
+            color: #2e7d32;
+            font-weight: 600;
+            font-size: 12px;
+            word-break: break-all;
+            flex: 1;
+        }
+
+        .attribute-xpath-value {
+            font-family: 'Courier New', monospace;
+            color: #1a1a1a;
+            font-size: 12px;
+            word-break: break-word;
+            background-color: white;
+            padding: 6px 10px;
+            border-radius: 3px;
+            border: 1px solid #c8e6c9;
+        }
+
+        .children-container {
+            margin-top: 12px;
+            padding-left: 20px;
+            border-left: 2px solid #e0e0e0;
+            max-height: 5000px;
+            overflow: hidden;
+            transition: max-height 0.3s ease, opacity 0.3s ease;
+            opacity: 1;
+        }
+
+        .children-container.hidden {
+            max-height: 0;
+            opacity: 0;
+        }
+
+        .footer {
+            background-color: white;
+            padding: 20px;
+            text-align: center;
+            border-top: 1px solid #e0e0e0;
+            font-size: 14px;
+            color: #666;
+        }
+
+        .footer a {
+            color: #0073b1;
+            text-decoration: none;
+            font-weight: 500;
+            transition: color 0.3s ease;
+        }
+
+        .footer a:hover {
+            color: #005582;
+            text-decoration: underline;
+        }
+
+        h1 {
+            color: #0073b1;
+            margin-bottom: 10px;
+        }
+
+        .description {
+            color: #666;
+            line-height: 1.6;
+        }
+    </style>
+</head>
+<body>
+    <div class="main-wrapper">
+        <div class="header">
+            <div class="logo-container">
+                <img src="LI-Logo.png" alt="LinkedIn Logo" class="logo">
+            </div>
+            <a href="https://linkedin.atlassian.net/wiki/spaces/GCO/pages/492414984/Jobs+Minion+Overview" 
+               class="header-link" 
+               target="_blank" 
+               rel="noopener noreferrer">
+                Jobs Minion Overview
+            </a>
+        </div>
+
+        <div class="container">
+            <h1>XML XPath Extractor</h1>
+            <p class="description">
+                Enter the URL of an XML feed below to extract and analyze data using XPath expressions.
+            </p>
+            
+            <div class="form-group">
+                <input 
+                    type="text" 
+                    id="xmlFeedUrl" 
+                    class="form-input" 
+                    placeholder=" "
+                    value="">
+                <label class="floating-label">XML Feed URL</label>
+            </div>
+
+            <button class="extract-btn" id="extractBtn" onclick="extractXPaths()">
+                Extract XPaths
+            </button>
+
+            <div class="loading" id="loading">
+                <p>⏳ Fetching and parsing XML feed...</p>
+            </div>
+
+            <div class="error" id="error"></div>
+
+            <div class="results" id="results">
+                <div class="results-header">
+                    <h2 class="results-title">Extracted XPaths</h2>
+                    <div class="action-buttons">
+                        <button class="action-btn" onclick="expandAllXPaths()">Expand All</button>
+                        <button class="action-btn" onclick="collapseAllXPaths()">Collapse All</button>
+                    </div>
+                </div>
+                <div class="xpath-list" id="xpathList"></div>
+            </div>
+        </div>
+
+        <div class="footer">
+            © 2026 XML XPath Extractor | Designed by <a href="https://www.linkedin.com/in/akashsinghjsr/" target="_blank" rel="noopener noreferrer">Akash Singh</a>
+        </div>
+    </div>
+
+    <script>
+        const xpathFeedUrl = document.getElementById('xmlFeedUrl');
+        const extractBtn = document.getElementById('extractBtn');
+        const loading = document.getElementById('loading');
+        const error = document.getElementById('error');
+        const results = document.getElementById('results');
+        const xpathList = document.getElementById('xpathList');
+
+        async function extractXPaths() {
+            const url = xpathFeedUrl.value.trim();
+            
+            if (!url) {
+                showError('Please enter a valid XML feed URL');
+                return;
+            }
+
+            hideError();
+            hideResults();
+            showLoading();
+            extractBtn.disabled = true;
+
+            try {
+                // Fetch XML using CORS proxy for public URLs or direct fetch
+                let xmlText;
+                try {
+                    const response = await fetch(url);
+                    if (!response.ok) throw new Error('Failed to fetch XML');
+                    xmlText = await response.text();
+                } catch (fetchError) {
+                    // If direct fetch fails, try with CORS proxy
+                    const corsProxy = 'https://api.allorigins.win/raw?url=';
+                    const response = await fetch(corsProxy + encodeURIComponent(url));
+                    if (!response.ok) throw new Error('Failed to fetch XML');
+                    xmlText = await response.text();
+                }
+
+                // Parse XML
+                const parser = new DOMParser();
+                const xmlDoc = parser.parseFromString(xmlText, 'text/xml');
+
+                // Check for parsing errors
+                const parserError = xmlDoc.querySelector('parsererror');
+                if (parserError) {
+                    throw new Error('Invalid XML format');
+                }
+
+                // Extract XPaths
+                const xpaths = getAllXPaths(xmlDoc);
+                
+                if (xpaths.length === 0) {
+                    throw new Error('No XPath expressions found in the XML');
+                }
+
+                displayXPaths(xpaths);
+                showResults();
+            } catch (err) {
+                showError(err.message || 'An error occurred while processing the XML');
+            } finally {
+                hideLoading();
+                extractBtn.disabled = false;
+            }
+        }
+
+        function getAllXPaths(xmlDoc) {
+            const xpaths = [];
+            const root = xmlDoc.documentElement;
+
+            // Skip root and process only child elements
+            const childElements = Array.from(root.children);
+            
+            childElements.forEach(child => {
+                processElement(child, '', xpaths);
+            });
+
+            return xpaths;
+        }
+
+        function processElement(element, parentPath, xpaths) {
+            const tagName = element.tagName;
+            const xpath = parentPath ? `${parentPath}//${tagName}` : `//${tagName}`;
+            
+            // Get text content (only direct text, not from children)
+            let textContent = '';
+            for (let node of element.childNodes) {
+                if (node.nodeType === Node.TEXT_NODE) {
+                    textContent += node.textContent;
+                }
+            }
+            textContent = textContent.trim();
+
+            // Get attributes
+            const attributes = {};
+            for (let attr of element.attributes) {
+                attributes[attr.name] = attr.value;
+            }
+
+            // Check if has child elements
+            const childElements = Array.from(element.children);
+            const hasChildren = childElements.length > 0;
+
+            // Add current element
+            xpaths.push({
+                xpath: xpath,
+                value: textContent,
+                attributes: attributes,
+                has_children: hasChildren,
+                children: []
+            });
+
+            // Process child elements
+            if (hasChildren) {
+                const currentIndex = xpaths.length - 1;
+                childElements.forEach(child => {
+                    const childXPaths = [];
+                    processElement(child, xpath, childXPaths);
+                    xpaths[currentIndex].children.push(...childXPaths);
+                });
+            }
+        }
+
+        function displayXPaths(xpaths) {
+            xpathList.innerHTML = '';
+            
+            // Organize into tree structure
+            const tree = buildTree(xpaths);
+            
+            tree.forEach(item => {
+                displayXPathItem(item, xpathList, false, '');
+            });
+        }
+
+        function buildTree(xpaths) {
+            const xpathMap = new Map();
+            const tree = [];
+
+            xpaths.forEach(item => {
+                xpathMap.set(item.xpath, { ...item, children: item.children || [] });
+            });
+
+            xpaths.forEach(item => {
+                const node = xpathMap.get(item.xpath);
+                
+                const pathParts = item.xpath.split('/');
+                if (pathParts.length > 2) {
+                    const parentPath = pathParts.slice(0, -1).join('/');
+                    const parent = xpathMap.get(parentPath);
+                    
+                    if (parent && item.has_children === false) {
+                        if (!parent.children.some(c => c.xpath === item.xpath)) {
+                            parent.children.push(node);
+                        }
+                    } else {
+                        if (!tree.some(t => t.xpath === item.xpath)) {
+                            tree.push(node);
+                        }
+                    }
+                } else {
+                    if (!tree.some(t => t.xpath === item.xpath)) {
+                        tree.push(node);
+                    }
+                }
+            });
+
+            return tree;
+        }
+
+        function displayXPathItem(item, container, isChild = false, parentPath = '') {
+            const xpathItem = document.createElement('div');
+            const hasChildren = item.children && item.children.length > 0;
+            
+            let displayXPath = item.xpath;
+            let copyXPath = item.xpath;
+            if (isChild && parentPath) {
+                displayXPath = displayXPath.replace(parentPath, '');
+                if (!displayXPath.startsWith('//')) {
+                    displayXPath = '//' + displayXPath.replace(/^\/+/, '');
+                }
+                displayXPath += '/text()';
+                copyXPath = item.xpath + '/text()';
+            }
+            
+            xpathItem.className = 'xpath-item collapsed';
+            if (hasChildren) {
+                xpathItem.classList.add('parent-element');
+            } else if (isChild) {
+                xpathItem.classList.add('child-element');
+            }
+
+            // Build attributes section
+            let attributesHtml = '';
+            if (item.attributes && Object.keys(item.attributes).length > 0) {
+                const attrId = `attrs-${item.xpath.replace(/[^a-zA-Z0-9]/g, '_')}`;
+                const attrCount = Object.keys(item.attributes).length;
+                
+                const attrItems = Object.entries(item.attributes)
+                    .map(([key, value]) => {
+                        const attrXPath = `${item.xpath}/@${key}`;
+                        return `
+                            <div class="attribute-xpath-item">
+                                <div class="attribute-xpath-path">
+                                    <span class="xpath-path">${escapeHtml(attrXPath)}</span>
+                                    <button class="copy-xpath-btn" onclick="event.stopPropagation(); copyXPath('${escapeHtml(attrXPath)}', this)" title="Copy XPath">Copy</button>
+                                </div>
+                                <div class="attribute-xpath-value">${escapeHtml(value)}</div>
+                            </div>
+                        `;
+                    })
+                    .join('');
+                
+                attributesHtml = `
+                    <div class="attributes">
+                        <div class="attributes-header">
+                            <strong>Attributes (${attrCount}):</strong>
+                            <button class="attributes-toggle-btn collapsed" onclick="event.stopPropagation(); toggleAttributes('${attrId}', this)">
+                                Show Attributes
+                            </button>
+                        </div>
+                        <div class="attributes-content hidden" id="${attrId}">
+                            ${attrItems}
+                        </div>
+                    </div>
+                `;
+            }
+
+            const valueClass = item.value ? '' : 'empty';
+            const displayValue = item.value || '(empty or contains child elements)';
+            
+            const badge = hasChildren 
+                ? '<span class="element-badge parent">Parent Element</span>' 
+                : (isChild ? '' : '<span class="element-badge leaf">Leaf Element</span>');
+            
+            const toggleBtn = hasChildren 
+                ? `<button class="toggle-children-btn" onclick="event.stopPropagation(); toggleChildren('children-${item.xpath.replace(/[^a-zA-Z0-9]/g, '_')}', this)">Show ${item.children.length} Child Elements</button>`
+                : '';
+            
+            xpathItem.innerHTML = `
+                <div class="xpath-header" onclick="toggleXPathItem(this.parentElement)">
+                    <div>
+                        <span class="xpath-path">${escapeHtml(displayXPath)}${badge}</span>
+                        <button class="copy-xpath-btn" onclick="event.stopPropagation(); copyXPath('${escapeHtml(copyXPath)}', this)" title="Copy XPath">Copy</button>
+                    </div>
+                    ${toggleBtn}
+                </div>
+                <div class="xpath-content">
+                    <div class="xpath-value ${valueClass}">${escapeHtml(displayValue)}</div>
+                    ${attributesHtml}
+                </div>
+            `;
+            
+            container.appendChild(xpathItem);
+            
+            if (hasChildren) {
+                const childrenContainer = document.createElement('div');
+                childrenContainer.className = 'children-container hidden';
+                childrenContainer.id = `children-${item.xpath.replace(/[^a-zA-Z0-9]/g, '_')}`;
+                
+                item.children.forEach(child => {
+                    displayXPathItem(child, childrenContainer, true, item.xpath);
+                });
+                
+                const xpathContent = xpathItem.querySelector('.xpath-content');
+                xpathContent.appendChild(childrenContainer);
+            }
+        }
+
+        function toggleChildren(containerId, button) {
+            const container = document.getElementById(containerId);
+            if (container) {
+                const xpathItem = button.closest('.xpath-item');
+                if (xpathItem && container.classList.contains('hidden')) {
+                    xpathItem.classList.remove('collapsed');
+                }
+                
+                container.classList.toggle('hidden');
+                button.classList.toggle('collapsed');
+                
+                if (container.classList.contains('hidden')) {
+                    const childCount = container.querySelectorAll('.xpath-item').length;
+                    button.textContent = `Show ${childCount} Child Elements`;
+                } else {
+                    const childCount = container.querySelectorAll('.xpath-item').length;
+                    button.textContent = `Hide ${childCount} Child Elements`;
+                }
+            }
+        }
+
+        function toggleAttributes(attrId, button) {
+            const container = document.getElementById(attrId);
+            if (container) {
+                container.classList.toggle('hidden');
+                button.classList.toggle('collapsed');
+                
+                if (container.classList.contains('hidden')) {
+                    button.textContent = 'Show Attributes';
+                } else {
+                    button.textContent = 'Hide Attributes';
+                }
+            }
+        }
+
+        function toggleXPathItem(item) {
+            item.classList.toggle('collapsed');
+        }
+
+        function expandAllXPaths() {
+            const allItems = document.querySelectorAll('.xpath-item');
+            allItems.forEach(item => {
+                item.classList.remove('collapsed');
+            });
+        }
+
+        function collapseAllXPaths() {
+            const allItems = document.querySelectorAll('.xpath-item');
+            allItems.forEach(item => {
+                item.classList.add('collapsed');
+            });
+        }
+
+        async function copyXPath(xpath, button) {
+            try {
+                await navigator.clipboard.writeText(xpath);
+                const originalText = button.textContent;
+                button.textContent = 'Copied!';
+                button.classList.add('copied');
+                
+                setTimeout(() => {
+                    button.textContent = originalText;
+                    button.classList.remove('copied');
+                }, 2000);
+            } catch (err) {
+                console.error('Failed to copy:', err);
+            }
+        }
+
+        function escapeHtml(text) {
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+
+        function showLoading() {
+            loading.classList.add('show');
+        }
+
+        function hideLoading() {
+            loading.classList.remove('show');
+        }
+
+        function showError(message) {
+            error.textContent = message;
+            error.classList.add('show');
+        }
+
+        function hideError() {
+            error.classList.remove('show');
+        }
+
+        function showResults() {
+            results.classList.add('show');
+        }
+
+        function hideResults() {
+            results.classList.remove('show');
+        }
+
+        // Allow Enter key to submit
+        xpathFeedUrl.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') {
+                extractXPaths();
+            }
+        });
+    </script>
+</body>
+</html>
