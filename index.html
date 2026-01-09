@@ -519,7 +519,7 @@
         }
 
         .auth-toggle-icon.collapsed {
-            transform: rotate(-90deg);
+            transform: rotate(0deg);
         }
 
         .auth-fields {
@@ -584,7 +584,7 @@
 
             <div class="auth-section">
                 <div class="auth-toggle" onclick="toggleAuthFields()">
-                    <span class="auth-toggle-icon" id="authToggleIcon">▼</span>
+                    <span class="auth-toggle-icon collapsed" id="authToggleIcon">▶</span>
                     <span>Authentication (Optional)</span>
                 </div>
                 <div class="auth-fields hidden" id="authFields">
@@ -999,6 +999,13 @@
             
             authFields.classList.toggle('hidden');
             authToggleIcon.classList.toggle('collapsed');
+            
+            // Update arrow direction based on state
+            if (authFields.classList.contains('hidden')) {
+                authToggleIcon.textContent = '▶';
+            } else {
+                authToggleIcon.textContent = '▼';
+            }
         }
 
         function showLoading() {
