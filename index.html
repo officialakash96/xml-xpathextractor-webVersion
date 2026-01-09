@@ -489,6 +489,67 @@
             color: #666;
             line-height: 1.6;
         }
+
+        .auth-section {
+            margin-top: 20px;
+            padding: 15px;
+            background-color: #f8f9fa;
+            border-radius: 4px;
+            border: 1px solid #e0e0e0;
+        }
+
+        .auth-toggle {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            cursor: pointer;
+            color: #0073b1;
+            font-weight: 500;
+            font-size: 14px;
+            margin-bottom: 15px;
+        }
+
+        .auth-toggle:hover {
+            color: #005582;
+        }
+
+        .auth-toggle-icon {
+            transition: transform 0.3s ease;
+            font-size: 12px;
+        }
+
+        .auth-toggle-icon.collapsed {
+            transform: rotate(-90deg);
+        }
+
+        .auth-fields {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+            max-height: 200px;
+            overflow: hidden;
+            transition: max-height 0.3s ease, opacity 0.3s ease;
+            opacity: 1;
+        }
+
+        .auth-fields.hidden {
+            max-height: 0;
+            opacity: 0;
+        }
+
+        .auth-help {
+            grid-column: 1 / -1;
+            font-size: 12px;
+            color: #666;
+            font-style: italic;
+            margin-top: 5px;
+        }
+
+        @media (max-width: 600px) {
+            .auth-fields {
+                grid-template-columns: 1fr;
+            }
+        }
     </style>
 </head>
 <body>
@@ -519,6 +580,36 @@
                     placeholder=" "
                     value="">
                 <label class="floating-label">XML Feed URL</label>
+            </div>
+
+            <div class="auth-section">
+                <div class="auth-toggle" onclick="toggleAuthFields()">
+                    <span class="auth-toggle-icon" id="authToggleIcon">▼</span>
+                    <span>Authentication (Optional)</span>
+                </div>
+                <div class="auth-fields hidden" id="authFields">
+                    <div class="form-group">
+                        <input 
+                            type="text" 
+                            id="username" 
+                            class="form-input" 
+                            placeholder=" "
+                            autocomplete="username">
+                        <label class="floating-label">Username</label>
+                    </div>
+                    <div class="form-group">
+                        <input 
+                            type="password" 
+                            id="password" 
+                            class="form-input" 
+                            placeholder=" "
+                            autocomplete="current-password">
+                        <label class="floating-label">Password</label>
+                    </div>
+                    <div class="auth-help">
+                        💡 Leave blank if the XML feed doesn't require authentication
+                    </div>
+                </div>
             </div>
 
             <button class="extract-btn" id="extractBtn" onclick="extractXPaths()">
@@ -558,6 +649,8 @@
 
         async function extractXPaths() {
             const url = xpathFeedUrl.value.trim();
+            const username = document.getElementById('username').value.trim();
+            const password = document.getElementById('password').value.trim();
             
             if (!url) {
                 showError('Please enter a valid XML feed URL');
@@ -570,11 +663,23 @@
             extractBtn.disabled = true;
 
             try {
+                // Prepare headers for authentication if credentials provided
+                const headers = {};
+                if (username && password) {
+                    const encodedCredentials = btoa(`${username}:${password}`);
+                    headers['Authorization'] = `Basic ${encodedCredentials}`;
+                }
+
                 // Fetch XML using CORS proxy for public URLs or direct fetch
                 let xmlText;
                 try {
-                    const response = await fetch(url);
-                    if (!response.ok) throw new Error('Failed to fetch XML');
+                    const response = await fetch(url, { headers });
+                    if (!response.ok) {
+                        if (response.status === 401) {
+                            throw new Error('Authentication failed. Please check your username and password.');
+                        }
+                        throw new Error('Failed to fetch XML');
+                    }
                     xmlText = await response.text();
                 } catch (fetchError) {
                     // If direct fetch fails, try with CORS proxy
@@ -886,6 +991,14 @@
             const div = document.createElement('div');
             div.textContent = text;
             return div.innerHTML;
+        }
+
+        function toggleAuthFields() {
+            const authFields = document.getElementById('authFields');
+            const authToggleIcon = document.getElementById('authToggleIcon');
+            
+            authFields.classList.toggle('hidden');
+            authToggleIcon.classList.toggle('collapsed');
         }
 
         function showLoading() {
