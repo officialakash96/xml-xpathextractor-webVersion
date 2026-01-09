@@ -665,7 +665,8 @@
             try {
                 // Prepare headers for authentication if credentials provided
                 const headers = {};
-                if (username && password) {
+                const hasAuth = username && password;
+                if (hasAuth) {
                     const encodedCredentials = btoa(`${username}:${password}`);
                     headers['Authorization'] = `Basic ${encodedCredentials}`;
                 }
@@ -678,15 +679,32 @@
                         if (response.status === 401) {
                             throw new Error('Authentication failed. Please check your username and password.');
                         }
-                        throw new Error('Failed to fetch XML');
+                        if (response.status === 403) {
+                            throw new Error('Access forbidden. Please verify your credentials have proper permissions.');
+                        }
+                        throw new Error(`Failed to fetch XML (HTTP ${response.status})`);
                     }
                     xmlText = await response.text();
+                    
+                    // Check if response looks like HTML error page instead of XML
+                    if (xmlText.trim().toLowerCase().startsWith('<!doctype html') || 
+                        xmlText.trim().toLowerCase().startsWith('<html')) {
+                        throw new Error('Received HTML instead of XML. The feed may require authentication or may not be accessible.');
+                    }
                 } catch (fetchError) {
-                    // If direct fetch fails, try with CORS proxy
-                    const corsProxy = 'https://api.allorigins.win/raw?url=';
-                    const response = await fetch(corsProxy + encodeURIComponent(url));
-                    if (!response.ok) throw new Error('Failed to fetch XML');
-                    xmlText = await response.text();
+                    // If authentication is provided, don't try CORS proxy as it won't pass auth headers
+                    if (hasAuth) {
+                        throw fetchError;
+                    }
+                    // If direct fetch fails and no auth, try with CORS proxy
+                    try {
+                        const corsProxy = 'https://api.allorigins.win/raw?url=';
+                        const response = await fetch(corsProxy + encodeURIComponent(url));
+                        if (!response.ok) throw new Error(`Failed to fetch XML via CORS proxy (HTTP ${response.status})`);
+                        xmlText = await response.text();
+                    } catch (proxyError) {
+                        throw new Error(`Failed to fetch XML. Direct fetch and CORS proxy both failed. ${fetchError.message}`);
+                    }
                 }
 
                 // Parse XML
@@ -696,7 +714,8 @@
                 // Check for parsing errors
                 const parserError = xmlDoc.querySelector('parsererror');
                 if (parserError) {
-                    throw new Error('Invalid XML format');
+                    const errorText = parserError.textContent || 'Unknown parsing error';
+                    throw new Error(`Invalid XML format: ${errorText.substring(0, 200)}`);
                 }
 
                 // Extract XPaths
