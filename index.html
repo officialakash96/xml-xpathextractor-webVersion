@@ -607,7 +607,8 @@
                         <label class="floating-label">Password</label>
                     </div>
                     <div class="auth-help">
-                        💡 Leave blank if the XML feed doesn't require authentication
+                        💡 Leave blank if the XML feed doesn't require authentication<br>
+                        ⚠️ Note: Some password-protected feeds may be blocked by browser CORS policies. If authentication fails, consider using the Flask backend version.
                     </div>
                 </div>
             </div>
@@ -674,7 +675,13 @@
                 // Fetch XML using CORS proxy for public URLs or direct fetch
                 let xmlText;
                 try {
-                    const response = await fetch(url, { headers });
+                    const fetchOptions = {
+                        method: 'GET',
+                        headers: headers,
+                        mode: 'cors'
+                    };
+                    
+                    const response = await fetch(url, fetchOptions);
                     if (!response.ok) {
                         if (response.status === 401) {
                             throw new Error('Authentication failed. Please check your username and password.');
@@ -692,6 +699,13 @@
                         throw new Error('Received HTML instead of XML. The feed may require authentication or may not be accessible.');
                     }
                 } catch (fetchError) {
+                    // Check if it's a CORS error
+                    if (fetchError.message.includes('Failed to fetch') || fetchError.name === 'TypeError') {
+                        if (hasAuth) {
+                            throw new Error('CORS Error: Cannot access password-protected feed from browser. The server does not allow cross-origin requests with authentication. For authenticated feeds, please use the Flask backend version or download the XML file and use a local path.');
+                        }
+                    }
+                    
                     // If authentication is provided, don't try CORS proxy as it won't pass auth headers
                     if (hasAuth) {
                         throw fetchError;
