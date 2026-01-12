@@ -98,8 +98,6 @@ Try these sample feeds to test the application:
 
 Since this version runs entirely in the browser, it uses CORS proxy services (allorigins.win, corsproxy.io, codetabs.com) to fetch XML feeds that don't allow direct cross-origin requests. This works for most public XML feeds.
 
-**For password-protected feeds**: Browser security restrictions may prevent authentication through CORS proxies. For those feeds, use the [Flask backend version](https://github.com/akasingh_LinkedIn/xpath-extractor-python) instead.
-
 ## Updating the Application
 
 To get the latest updates:
@@ -119,32 +117,6 @@ Then refresh your browser to see the updates.
 - **`index.html`** - Complete standalone application (all HTML, CSS, and JavaScript in one file)
 - **`README.md`** - This file with instructions
 
-
-## Differences from Flask Backend Version
-
-| Feature | GitHub Pages Version | Flask Backend Version |
-|---------|---------------------|----------------------|
-| Installation | ❌ None required | ✅ Python + dependencies |
-| Backend Server | ❌ No server needed | ✅ Flask server required |
-| CORS Handling | ✅ Uses proxy services | ✅ Server-side fetch |
-| Authentication | ⚠️ Limited by browser | ✅ Full support |
-| Hosting | ✅ Free on GitHub Pages | ✅ Requires server |
-| Offline Use | ✅ Works offline (after loading) | ❌ Needs server running |
-
-## When to Use Which Version?
-
-- **Use GitHub Pages Version** if:
-  - You want zero installation
-  - Working with public XML feeds
-  - Need quick access without setup
-  - Want to share with others via URL
-
-- **Use [Flask Backend Version](https://github.com/akasingh_LinkedIn/xpath-extractor-python)** if:
-  - Working with password-protected feeds
-  - Need guaranteed CORS support
-  - Want full control over the server
-  - Have complex authentication requirements
-
 ## Troubleshooting
 
 ### Cannot Fetch XML Feed
@@ -152,7 +124,6 @@ Then refresh your browser to see the updates.
 If you see CORS errors:
 1. Try a different XML feed to verify the app works
 2. Check if the feed URL is publicly accessible
-3. For authenticated feeds, consider using the [Flask backend version](https://github.com/akasingh_LinkedIn/xpath-extractor-python)
 
 ### Page Not Loading Locally
 
@@ -180,7 +151,6 @@ To host your own version:
 ## Need Help?
 
 - Check the [Issues](https://github.com/akasingh_LinkedIn/xml-xpath-extractor/issues) page
-- Try the [Flask backend version](https://github.com/akasingh_LinkedIn/xpath-extractor-python) for more complex needs
 - Contact the support team
 
 ## Author
