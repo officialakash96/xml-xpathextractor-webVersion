@@ -118,7 +118,6 @@ Then refresh your browser to see the updates.
 ## Files in This Project
 
 - **`index.html`** - Complete standalone application (all HTML, CSS, and JavaScript in one file)
-- **`LI-Logo.png`** - LinkedIn logo for the header
 - **`README.md`** - This file with instructions
 
 ## Differences from Flask Backend Version
