@@ -566,6 +566,128 @@
                 grid-template-columns: 1fr;
             }
         }
+
+        /* Modal Styles */
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 1000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.5);
+            animation: fadeIn 0.3s ease;
+        }
+
+        .modal.show {
+            display: block;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+
+        .modal-content {
+            background-color: white;
+            margin: 10% auto;
+            padding: 30px;
+            border-radius: 8px;
+            width: 90%;
+            max-width: 500px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+            animation: slideDown 0.3s ease;
+        }
+
+        @keyframes slideDown {
+            from {
+                transform: translateY(-50px);
+                opacity: 0;
+            }
+            to {
+                transform: translateY(0);
+                opacity: 1;
+            }
+        }
+
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            border-bottom: 2px solid #0073b1;
+            padding-bottom: 15px;
+        }
+
+        .modal-title {
+            color: #0073b1;
+            font-size: 20px;
+            font-weight: 600;
+            margin: 0;
+        }
+
+        .modal-close {
+            font-size: 28px;
+            font-weight: bold;
+            color: #999;
+            cursor: pointer;
+            background: none;
+            border: none;
+            padding: 0;
+            transition: color 0.3s ease;
+        }
+
+        .modal-close:hover {
+            color: #0073b1;
+        }
+
+        .sample-feeds-list {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        .sample-feed-item {
+            padding: 15px;
+            background-color: #f8f9fa;
+            border: 1px solid #e0e0e0;
+            border-radius: 6px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .sample-feed-item:hover {
+            background-color: #f0f0f0;
+            border-color: #0073b1;
+        }
+
+        .sample-feed-url {
+            font-family: 'Courier New', monospace;
+            font-size: 12px;
+            color: #1a1a1a;
+            word-break: break-all;
+            flex: 1;
+        }
+
+        .use-feed-btn {
+            padding: 8px 16px;
+            background-color: #0073b1;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            font-size: 12px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            white-space: nowrap;
+            font-weight: 500;
+        }
+
+        .use-feed-btn:hover {
+            background-color: #005582;
+        }
     </style>
 </head>
 <body>
@@ -577,12 +699,29 @@
                rel="noopener noreferrer">
                 Author's Github
             </a>
-            <a href="https://pastebin.com/K6wVMhx6" 
-               class="header-link" 
-               target="_blank" 
-               rel="noopener noreferrer">
+            <button id="sampleFeedsBtn" class="header-link" style="cursor: pointer; background: none; border: 1px solid white; padding: 8px 16px;">
                 Sample XML feeds
-            </a>
+            </button>
+        </div>
+
+        <!-- Sample Feeds Modal -->
+        <div id="sampleFeedsModal" class="modal">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h2 class="modal-title">Sample XML Feeds</h2>
+                    <button class="modal-close" onclick="closeSampleFeedsModal()">&times;</button>
+                </div>
+                <div class="sample-feeds-list">
+                    <div class="sample-feed-item">
+                        <span class="sample-feed-url">https://testjobingestion.pythonanywhere.com/autosourceprovision77</span>
+                        <button class="use-feed-btn" onclick="useSampleFeed('https://testjobingestion.pythonanywhere.com/autosourceprovision77')">Use Feed</button>
+                    </div>
+                    <div class="sample-feed-item">
+                        <span class="sample-feed-url">https://feeds.bbci.co.uk/news/rss.xml</span>
+                        <button class="use-feed-btn" onclick="useSampleFeed('https://feeds.bbci.co.uk/news/rss.xml')">Use Feed</button>
+                    </div>
+                </div>
+            </div>
         </div>
 
         <div class="container">
@@ -1204,12 +1343,32 @@
             results.classList.remove('show');
         }
 
+        function openSampleFeedsModal() {
+            const modal = document.getElementById('sampleFeedsModal');
+            modal.classList.add('show');
+        }
+
+        function closeSampleFeedsModal() {
+            const modal = document.getElementById('sampleFeedsModal');
+            modal.classList.remove('show');
+        }
+
+        function useSampleFeed(url) {
+            const xmlFeedUrl = document.getElementById('xmlFeedUrl');
+            xmlFeedUrl.value = url;
+            closeSampleFeedsModal();
+        }
+
         // Allow Enter key to submit
         xpathFeedUrl.addEventListener('keypress', (e) => {
             if (e.key === 'Enter') {
                 extractXPaths();
             }
         });
+
+        // Open modal on button click
+        const sampleFeedsBtn = document.getElementById('sampleFeedsBtn');
+        sampleFeedsBtn.addEventListener('click', openSampleFeedsModal);
     </script>
 </body>
 </html>
