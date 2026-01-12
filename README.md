@@ -18,13 +18,7 @@ A pure client-side JavaScript version of the XML XPath Extractor that works enti
 
 ## Getting Started (For Beginners)
 
-### Option 1: Use the Live Version (Easiest!)
-
-Simply visit: **[https://akasingh_LinkedIn.github.io/xml-xpath-extractor/](https://akasingh_LinkedIn.github.io/xml-xpath-extractor/)**
-
-No installation required! Just open the link and start using it.
-
-### Option 2: Run Locally on Your Computer
+### Run Locally on Your Computer
 
 If you want to run it on your own computer or make changes:
 
