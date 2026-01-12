@@ -75,7 +75,6 @@ When you're done, press `Ctrl+C` in the terminal to stop the server.
 
 1. **Enter XML Feed URL**: Paste your XML feed URL in the input field
 2. **Optional Authentication**: If your feed requires a username/password, expand the "Authentication (Optional)" section
-   - Note: Some password-protected feeds may be blocked by browser CORS policies. For those, use the [Flask backend version](https://github.com/akasingh_LinkedIn/xpath-extractor-python)
 3. **Click "Extract XPaths"**: The app will fetch and parse the XML
 4. **View Results**: All XPath expressions will be displayed with:
    - Sample values from the feed
@@ -119,6 +118,7 @@ Then refresh your browser to see the updates.
 
 - **`index.html`** - Complete standalone application (all HTML, CSS, and JavaScript in one file)
 - **`README.md`** - This file with instructions
+
 
 ## Differences from Flask Backend Version
 
