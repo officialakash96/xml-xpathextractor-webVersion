@@ -621,7 +621,7 @@
                     </div>
                     <div class="auth-help">
                         💡 Leave blank if the XML feed doesn't require authentication<br>
-                        ⚠️ Note: Some password-protected feeds may be blocked by browser CORS policies. If authentication fails, consider using the <a href="https://github.com/akasingh_LinkedIn/xpath-extractor-python" target="_blank" rel="noopener noreferrer" style="color: #0073b1; text-decoration: underline;">Flask backend version</a>.
+                        ⚠️ Note: Some password-protected feeds may be blocked by browser CORS policies.
                     </div>
                 </div>
             </div>
@@ -715,7 +715,7 @@
                     // Check if it's a CORS error
                     if (fetchError.message.includes('Failed to fetch') || fetchError.name === 'TypeError') {
                         if (hasAuth) {
-                            throw new Error('CORS Error: Cannot access password-protected feed from browser. The server does not allow cross-origin requests with authentication. For authenticated feeds, please use the Flask backend version (https://github.com/akasingh_LinkedIn/xpath-extractor-python) or download the XML file and use a local path.');
+                            throw new Error('CORS Error: Cannot access password-protected feed from browser. The server does not allow cross-origin requests with authentication.');
                         }
                     }
                     
