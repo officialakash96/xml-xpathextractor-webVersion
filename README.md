@@ -150,7 +150,7 @@ To host your own version:
 
 ## Need Help?
 
-- Check the [Issues](https://github.com/akasingh_LinkedIn/xml-xpath-extractor/issues) page
+- Check the [Issues](https://github.com/officialakash96/xml-xpathextractor-webVersion/issues) page
 - Contact the support team
 
 ## Author
