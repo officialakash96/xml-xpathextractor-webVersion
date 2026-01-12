@@ -40,10 +40,10 @@ Open your Terminal (Mac/Linux) or Command Prompt (Windows) and run:
 cd ~/Documents
 
 # Clone the repository
-git clone https://github.com/akasingh_LinkedIn/xml-xpath-extractor.git
+git clone https://github.com/officialakash96/xml-xpathextractor-webVersion.git
 
 # Enter the project directory
-cd xml-xpath-extractor
+cd xml-xpathextractor-webVersion
 ```
 
 #### Step 2: Open in Browser
