@@ -11,19 +11,28 @@
             box-sizing: border-box;
         }
 
+        html {
+            overflow-y: scroll;
+            overflow-x: hidden;
+        }
+
         body {
             font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
             background-color: #f5f5f5;
             padding: 20px;
+            min-height: 100vh;
+            overflow-x: hidden;
         }
 
         .main-wrapper {
             max-width: 800px;
             margin: 0 auto;
+            margin-bottom: 40px;
             background-color: white;
             border-radius: 8px;
             box-shadow: 0 2px 8px rgba(0,0,0,0.1);
-            overflow: hidden;
+            overflow: visible;
+            min-height: auto;
         }
 
         .header {
@@ -67,6 +76,8 @@
         .container {
             background-color: white;
             padding: 40px;
+            padding-bottom: 60px;
+            min-height: auto;
         }
 
         .form-group {
@@ -156,14 +167,14 @@
         }
 
         .results {
-            max-height: 0;
-            overflow: hidden;
-            transition: max-height 0.3s ease;
+            display: none;
         }
 
         .results.show {
-            max-height: none;
+            display: block;
             margin-top: 30px;
+            margin-bottom: 40px;
+            overflow: visible;
         }
 
         .results-header {
@@ -206,6 +217,8 @@
             display: flex;
             flex-direction: column;
             gap: 12px;
+            max-height: none;
+            overflow: visible;
         }
 
         .xpath-item {
@@ -328,8 +341,8 @@
         }
 
         .xpath-content {
-            max-height: 1000px;
-            overflow: hidden;
+            max-height: none;
+            overflow: visible;
             transition: max-height 0.3s ease, opacity 0.3s ease, margin-bottom 0.3s ease;
             padding: 0 15px 12px;
             opacity: 1;
@@ -338,6 +351,7 @@
 
         .xpath-item.collapsed .xpath-content {
             max-height: 0;
+            overflow: hidden;
             opacity: 0;
             margin-bottom: 0;
         }
@@ -393,14 +407,15 @@
         }
 
         .attributes-content {
-            max-height: 500px;
-            overflow: hidden;
+            max-height: none;
+            overflow: visible;
             transition: max-height 0.3s ease, opacity 0.3s ease;
             opacity: 1;
         }
 
         .attributes-content.hidden {
             max-height: 0;
+            overflow: hidden;
             opacity: 0;
         }
 
@@ -448,14 +463,15 @@
             margin-top: 12px;
             padding-left: 20px;
             border-left: 2px solid #e0e0e0;
-            max-height: 5000px;
-            overflow: hidden;
+            max-height: none;
+            overflow: visible;
             transition: max-height 0.3s ease, opacity 0.3s ease;
             opacity: 1;
         }
 
         .children-container.hidden {
             max-height: 0;
+            overflow: hidden;
             opacity: 0;
         }
 
@@ -710,14 +726,29 @@
                     if (hasAuth) {
                         throw fetchError;
                     }
-                    // If direct fetch fails and no auth, try with CORS proxy
-                    try {
-                        const corsProxy = 'https://api.allorigins.win/raw?url=';
-                        const response = await fetch(corsProxy + encodeURIComponent(url));
-                        if (!response.ok) throw new Error(`Failed to fetch XML via CORS proxy (HTTP ${response.status})`);
-                        xmlText = await response.text();
-                    } catch (proxyError) {
-                        throw new Error(`Failed to fetch XML. Direct fetch and CORS proxy both failed. ${fetchError.message}`);
+                    // If direct fetch fails and no auth, try multiple CORS proxies
+                    const corsProxies = [
+                        'https://api.allorigins.win/raw?url=',
+                        'https://corsproxy.io/?',
+                        'https://api.codetabs.com/v1/proxy?quest='
+                    ];
+                    
+                    let lastError = fetchError;
+                    for (const corsProxy of corsProxies) {
+                        try {
+                            const response = await fetch(corsProxy + encodeURIComponent(url));
+                            if (!response.ok) throw new Error(`HTTP ${response.status}`);
+                            xmlText = await response.text();
+                            break; // Success, exit the loop
+                        } catch (proxyError) {
+                            lastError = proxyError;
+                            continue; // Try next proxy
+                        }
+                    }
+                    
+                    // If all proxies failed
+                    if (!xmlText) {
+                        throw new Error(`Failed to fetch XML. The feed does not allow cross-origin requests. Direct fetch failed: ${fetchError.message}`);
                     }
                 }
 
@@ -756,16 +787,68 @@
             // Skip root and process only child elements
             const childElements = Array.from(root.children);
             
+            // Group elements by tag name to identify repeating elements
+            const elementsByTag = {};
             childElements.forEach(child => {
-                processElement(child, '', xpaths);
+                const tagName = child.tagName;
+                if (!elementsByTag[tagName]) {
+                    elementsByTag[tagName] = [];
+                }
+                elementsByTag[tagName].push(child);
+            });
+            
+            // Process only the first instance of each repeating element
+            Object.values(elementsByTag).forEach(elements => {
+                // Only process the first element of each type
+                processElement(elements[0], '', xpaths);
             });
 
             return xpaths;
         }
 
-        function processElement(element, parentPath, xpaths) {
+        function hasAttributesInTree(element) {
+            // Check if current element has attributes
+            if (element.attributes && element.attributes.length > 0) {
+                return true;
+            }
+            
+            // Check if any parent has attributes (traverse up)
+            let parent = element.parentElement;
+            while (parent && parent !== parent.ownerDocument.documentElement) {
+                if (parent.attributes && parent.attributes.length > 0) {
+                    return true;
+                }
+                parent = parent.parentElement;
+            }
+            
+            // Check if any child has attributes (traverse down)
+            const children = Array.from(element.children);
+            for (let child of children) {
+                if (hasAttributesInTree(child)) {
+                    return true;
+                }
+            }
+            
+            return false;
+        }
+
+        function processElement(element, parentPath, xpaths, useSimplePath = null) {
             const tagName = element.tagName;
-            const xpath = parentPath ? `${parentPath}//${tagName}` : `//${tagName}`;
+            
+            // Determine if we should use simple path format
+            if (useSimplePath === null) {
+                useSimplePath = !hasAttributesInTree(element);
+            }
+            
+            // Build xpath based on whether attributes exist
+            let xpath;
+            if (useSimplePath) {
+                // Simple path format: industrycodes/industryCode
+                xpath = parentPath ? `${parentPath}/${tagName}` : tagName;
+            } else {
+                // Double slash format: //location/text()
+                xpath = parentPath ? `${parentPath}//${tagName}` : `//${tagName}`;
+            }
             
             // Get text content (only direct text, not from children)
             let textContent = '';
@@ -792,7 +875,8 @@
                 value: textContent,
                 attributes: attributes,
                 has_children: hasChildren,
-                children: []
+                children: [],
+                useSimplePath: useSimplePath
             });
 
             // Process child elements
@@ -800,7 +884,7 @@
                 const currentIndex = xpaths.length - 1;
                 childElements.forEach(child => {
                     const childXPaths = [];
-                    processElement(child, xpath, childXPaths);
+                    processElement(child, xpath, childXPaths, useSimplePath);
                     xpaths[currentIndex].children.push(...childXPaths);
                 });
             }
@@ -813,7 +897,9 @@
             const tree = buildTree(xpaths);
             
             tree.forEach(item => {
-                displayXPathItem(item, xpathList, false, '');
+                // Extract root element name (e.g., "job" from "//job")
+                const rootElement = item.xpath.replace(/^\/\//, '').split('/')[0];
+                displayXPathItem(item, xpathList, false, '', rootElement);
             });
         }
 
@@ -852,19 +938,47 @@
             return tree;
         }
 
-        function displayXPathItem(item, container, isChild = false, parentPath = '') {
+        function displayXPathItem(item, container, isChild = false, parentPath = '', rootElement = '') {
             const xpathItem = document.createElement('div');
             const hasChildren = item.children && item.children.length > 0;
             
             let displayXPath = item.xpath;
             let copyXPath = item.xpath;
             if (isChild && parentPath) {
-                displayXPath = displayXPath.replace(parentPath, '');
-                if (!displayXPath.startsWith('//')) {
-                    displayXPath = '//' + displayXPath.replace(/^\/+/, '');
+                if (item.useSimplePath) {
+                    // Simple path format: keep full path but remove root element
+                    // e.g., "job/industryCodes/industryCode" -> "industryCodes/industryCode"
+                    displayXPath = item.xpath;
+                    copyXPath = item.xpath;
+                    if (rootElement) {
+                        // Remove root element prefix
+                        const rootPrefix = new RegExp(`^${rootElement}/`, 'g');
+                        displayXPath = displayXPath.replace(rootPrefix, '');
+                        copyXPath = displayXPath;
+                    }
+                } else {
+                    // Double slash format with /text()
+                    // Remove parent path to get relative path
+                    displayXPath = displayXPath.replace(parentPath, '');
+                    copyXPath = displayXPath;
+                    
+                    // Clean up the path
+                    if (!displayXPath.startsWith('//')) {
+                        displayXPath = '//' + displayXPath.replace(/^\/+/, '');
+                        copyXPath = displayXPath;
+                    }
+                    
+                    // Remove root element from the path (e.g., remove "job//" from "//job//location")
+                    if (rootElement) {
+                        const rootPattern = new RegExp(`^//${rootElement}//`, 'g');
+                        displayXPath = displayXPath.replace(rootPattern, '//');
+                        copyXPath = displayXPath;
+                    }
+                    
+                    // Add /text() for double slash format
+                    displayXPath += '/text()';
+                    copyXPath += '/text()';
                 }
-                displayXPath += '/text()';
-                copyXPath = item.xpath + '/text()';
             }
             
             xpathItem.className = 'xpath-item collapsed';
@@ -882,10 +996,25 @@
                 
                 const attrItems = Object.entries(item.attributes)
                     .map(([key, value]) => {
-                        // Extract only the last element for attribute XPath
-                        const pathParts = item.xpath.split('//').filter(part => part);
-                        const lastElement = pathParts[pathParts.length - 1] || item.xpath;
-                        const attrXPath = `//${lastElement}/@${key}`;
+                        // Build attribute XPath based on format
+                        let attrXPath;
+                        if (item.useSimplePath) {
+                            // Simple path format for attributes
+                            attrXPath = `${item.xpath}/@${key}`;
+                            // Remove root element from simple path if this is a child
+                            if (isChild && rootElement) {
+                                attrXPath = attrXPath.replace(new RegExp(`^${rootElement}/`), '');
+                            }
+                        } else {
+                            // Extract only the last element for attribute XPath with double slash
+                            const pathParts = item.xpath.split('//').filter(part => part);
+                            const lastElement = pathParts[pathParts.length - 1] || item.xpath;
+                            // Remove root element from the last element if present
+                            const cleanElement = rootElement && lastElement.startsWith(rootElement + '/') 
+                                ? lastElement.replace(rootElement + '/', '') 
+                                : lastElement;
+                            attrXPath = `//${cleanElement}/@${key}`;
+                        }
                         return `
                             <div class="attribute-xpath-item">
                                 <div class="attribute-xpath-path">
@@ -946,7 +1075,7 @@
                 childrenContainer.id = `children-${item.xpath.replace(/[^a-zA-Z0-9]/g, '_')}`;
                 
                 item.children.forEach(child => {
-                    displayXPathItem(child, childrenContainer, true, item.xpath);
+                    displayXPathItem(child, childrenContainer, true, item.xpath, rootElement);
                 });
                 
                 const xpathContent = xpathItem.querySelector('.xpath-content');
